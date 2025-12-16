@@ -70,24 +70,32 @@ class CompanyDataSeeder extends Seeder
             ['name' => 'Lisa Handayani', 'position' => 'Marketing Officer', 'department' => 'Marketing']
         ];
 
+        $departmentMap = [
+            'Leadership' => 'management',
+            'Creative' => 'creative',
+            'Operations' => 'operation',
+            'Production' => 'technical',
+            'Marketing' => 'marketing',
+        ];
+
         foreach ($teamMembers as $index => $member) {
+            $department = $departmentMap[$member['department']] ?? null;
+            $linkedinHandle = Str::slug($member['name']);
+
             Team::create([
                 'name' => $member['name'],
-                'slug' => Str::slug($member['name']),
                 'position' => $member['position'],
-                'department' => $member['department'],
+                'department' => $department,
                 'bio' => 'Experienced professional with a passion for creating extraordinary events.',
                 'email' => Str::slug($member['name'], '.') . '@dazzlingpro.id',
                 'phone' => '+62 812 3456 78' . str_pad($index, 2, '0', STR_PAD_LEFT),
                 'photo_url' => null,
-                'social_links' => json_encode([
-                    ['platform' => 'linkedin', 'url' => 'https://linkedin.com/in/' . Str::slug($member['name'])],
-                    ['platform' => 'instagram', 'url' => 'https://instagram.com/' . Str::slug($member['name'])]
-                ]),
+                'linkedin_url' => 'https://linkedin.com/in/' . $linkedinHandle,
+                'instagram_url' => 'https://instagram.com/' . $linkedinHandle,
                 'skills' => json_encode(['Event Planning', 'Project Management', 'Creative Design']),
                 'is_active' => true,
                 'is_featured' => $index < 3,
-                'order' => $index
+                'sort_order' => $index
             ]);
         }
 
