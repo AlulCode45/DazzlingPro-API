@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             GalleryCategorySeeder::class,
             GallerySeeder::class,
+            PageSectionSeeder::class,
             EventRentalSeeder::class,
         ]);
 
