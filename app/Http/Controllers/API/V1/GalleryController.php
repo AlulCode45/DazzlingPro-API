@@ -35,8 +35,7 @@ class GalleryController extends Controller
         // Add full URL to images
         $galleries->transform(function ($gallery) {
             if ($gallery->image_url && !str_starts_with($gallery->image_url, 'http')) {
-                // For development, return relative URL for proxy
-                $gallery->image_url = '/' . $gallery->image_url;
+                $gallery->image_url = url($gallery->image_url);
             }
             return $gallery;
         });
