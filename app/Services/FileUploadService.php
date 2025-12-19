@@ -83,6 +83,11 @@ class FileUploadService
      */
     public function deleteImage(string $path): bool
     {
+        // Skip deletion for external URLs (http/https)
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return false; // Don't try to delete external URLs
+        }
+
         if (Storage::disk('public')->exists($path)) {
             return Storage::disk('public')->delete($path);
         }

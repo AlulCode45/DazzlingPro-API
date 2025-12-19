@@ -11,12 +11,10 @@ class TestimonialResource extends BaseResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'position' => $this->position,
-            'company' => $this->company,
+            'role' => $this->role,
             'content' => $this->content,
             'rating' => $this->rating,
             'image_url' => $this->image_url,
-            'status' => $this->status,
         ] + $this->formatTimestamps();
     }
 }

@@ -9,15 +9,20 @@ use App\Http\Requests\API\V1\GetTestimonialsRequest;
 use App\Http\Resources\API\V1\TestimonialResource;
 use App\Http\Resources\API\V1\TestimonialCollection;
 use App\Services\Contracts\TestimonialServiceInterface;
+use App\Services\FileUploadService;
 use Illuminate\Http\JsonResponse;
 
 class TestimonialController extends Controller
 {
     private TestimonialServiceInterface $testimonialService;
+    private FileUploadService $fileUploadService;
 
-    public function __construct(TestimonialServiceInterface $testimonialService)
-    {
+    public function __construct(
+        TestimonialServiceInterface $testimonialService,
+        FileUploadService $fileUploadService
+    ) {
         $this->testimonialService = $testimonialService;
+        $this->fileUploadService = $fileUploadService;
     }
 
     public function index(GetTestimonialsRequest $request): JsonResponse
@@ -35,7 +40,25 @@ class TestimonialController extends Controller
 
     public function store(StoreTestimonialRequest $request): JsonResponse
     {
-        $testimonial = $this->testimonialService->create($request->validated());
+        $data = $request->validated();
+
+        // Handle file upload
+        if ($request->hasFile('image')) {
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('image'),
+                    'testimonials'
+                );
+                $data['image_url'] = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
+            }
+        }
+
+        // Remove 'image' from data as we've processed it
+        unset($data['image']);
+
+        $testimonial = $this->testimonialService->create($data);
 
         return $this->sendResponse(
             new TestimonialResource($testimonial),
@@ -56,7 +79,31 @@ class TestimonialController extends Controller
 
     public function update(UpdateTestimonialRequest $request, int $id): JsonResponse
     {
-        $testimonial = $this->testimonialService->update($id, $request->validated());
+        $data = $request->validated();
+        $testimonial = $this->testimonialService->getByIdOrFail($id);
+
+        // Handle file upload
+        if ($request->hasFile('image')) {
+            try {
+                // Delete old image if exists
+                if ($testimonial->image_url) {
+                    $this->fileUploadService->deleteImage($testimonial->image_url);
+                }
+
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('image'),
+                    'testimonials'
+                );
+                $data['image_url'] = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
+            }
+        }
+
+        // Remove 'image' from data as we've processed it
+        unset($data['image']);
+
+        $testimonial = $this->testimonialService->update($id, $data);
 
         return $this->sendResponse(
             new TestimonialResource($testimonial),
