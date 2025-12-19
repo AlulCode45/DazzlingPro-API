@@ -298,7 +298,15 @@ class PortfolioController extends Controller
             $imagePaths = array_merge($imagePaths, array_filter($request->image_urls));
         }
 
-        $portfolio->update([
+        // Log for debugging
+        \Log::info('Portfolio Update - Images:', [
+            'existing_images' => $request->existing_images,
+            'has_new_files' => $request->hasFile('images'),
+            'final_image_paths' => $imagePaths
+        ]);
+
+        // Only update images if we have data to update (don't overwrite with empty array)
+        $updateData = [
             'title' => $request->title ?? $portfolio->title,
             'slug' => $request->slug ?? $portfolio->slug,
             'description' => $request->description ?? $portfolio->description,
@@ -307,13 +315,19 @@ class PortfolioController extends Controller
             'event_date' => $request->event_date ?? $portfolio->event_date,
             'event_location' => $request->event_location ?? $portfolio->event_location,
             'portfolio_category_id' => $request->portfolio_category_id ?? $portfolio->portfolio_category_id,
-            'images' => $imagePaths,
             'featured_image' => $featuredImagePath,
             'featured' => $request->boolean('featured', $portfolio->featured),
             'completed' => $request->boolean('completed', $portfolio->completed),
             'status' => $request->boolean('status', $portfolio->status),
             'sort_order' => $request->sort_order ?? $portfolio->sort_order,
-        ]);
+        ];
+
+        // Only update images if we have changes
+        if ($request->hasFile('images') || $request->has('existing_images') || $request->has('image_urls')) {
+            $updateData['images'] = $imagePaths;
+        }
+
+        $portfolio->update($updateData);
 
         $portfolio->load('category');
 
