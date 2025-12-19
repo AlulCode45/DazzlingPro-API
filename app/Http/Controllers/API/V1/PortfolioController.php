@@ -47,8 +47,8 @@ class PortfolioController extends Controller
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('title', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%')
-                      ->orWhere('client_name', 'like', '%' . $request->search . '%');
+                    ->orWhere('description', 'like', '%' . $request->search . '%')
+                    ->orWhere('client_name', 'like', '%' . $request->search . '%');
             })
             ->when($request->has('event_date_from'), function ($query) use ($request) {
                 $query->whereDate('event_date', '>=', $request->event_date_from);
@@ -207,13 +207,13 @@ class PortfolioController extends Controller
             'event_location' => 'nullable|string|max:255',
             'portfolio_category_id' => 'sometimes|required|exists:portfolio_categories,id',
             'images' => 'nullable|array',
-            'images.*' => 'file|mimes:jpg,jpeg,png,webp|max:5120',
+            'images.*' => 'sometimes|file|mimes:jpg,jpeg,png,webp|max:5120',
             'image_urls' => 'nullable|array',
-            'image_urls.*' => 'url',
+            'image_urls.*' => 'nullable|string',
             'existing_images' => 'nullable|array',
-            'existing_images.*' => 'string',
+            'existing_images.*' => 'nullable|string',
             'featured_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
-            'featured_image_url' => 'nullable|url',
+            'featured_image_url' => 'nullable|string',
             'delete_featured_image' => 'sometimes|boolean',
             'featured' => 'sometimes|boolean',
             'completed' => 'sometimes|boolean',

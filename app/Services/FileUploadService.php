@@ -5,10 +5,16 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class FileUploadService
 {
+    /**
+     * Image manager instance (Intervention Image v3)
+     */
+    protected ImageManager $imageManager;
+
     /**
      * Allowed image extensions
      */
@@ -18,6 +24,12 @@ class FileUploadService
      * Maximum file size in bytes (5MB)
      */
     protected int $maxFileSize = 5 * 1024 * 1024;
+
+    public function __construct()
+    {
+        // Use GD driver by default (can switch to Imagick if available)
+        $this->imageManager = new ImageManager(new Driver());
+    }
 
     /**
      * Upload an image file
@@ -127,18 +139,32 @@ class FileUploadService
     protected function optimizeImage(string $filePath): void
     {
         try {
-            $image = Image::make($filePath);
+            $image = $this->imageManager->read($filePath);
 
-            // Resize if width is greater than 1920px
+            // Resize down if width is greater than 1920px (keep aspect ratio)
             if ($image->width() > 1920) {
-                $image->resize(1920, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
+                $image->scaleDown(width: 1920);
             }
 
-            // Compress image with 85% quality
-            $image->save($filePath, 85);
+            // Encode based on original extension
+            $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            switch ($extension) {
+                case 'jpg':
+                case 'jpeg':
+                    $bytes = $image->toJpeg(quality: 85);
+                    break;
+                case 'png':
+                    $bytes = $image->toPng();
+                    break;
+                case 'webp':
+                    $bytes = $image->toWebp(quality: 85);
+                    break;
+                default:
+                    $bytes = $image->toJpeg(quality: 85);
+            }
+
+            // Overwrite original file with optimized bytes
+            file_put_contents($filePath, $bytes);
         } catch (\Exception $e) {
             // Log error but don't fail the upload
             \Log::warning("Image optimization failed: " . $e->getMessage());
@@ -223,7 +249,7 @@ class FileUploadService
         }
 
         // Generate filename based on MIME type
-        $extension = match($mimeType) {
+        $extension = match ($mimeType) {
             'image/jpeg' => 'jpg',
             'image/png' => 'png',
             'image/webp' => 'webp',
