@@ -7,10 +7,18 @@ use App\Http\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class UploadController extends Controller
 {
+    protected $imageManager;
+
+    public function __construct()
+    {
+        $this->imageManager = new ImageManager(new Driver());
+    }
+
     /**
      * Upload company assets (logo, favicon)
      */
@@ -45,26 +53,22 @@ class UploadController extends Controller
             $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Process and save image
-            $image = Image::make($file);
+            $image = $this->imageManager->read($file);
 
             // Resize based on type
             if ($type === 'logo') {
                 // Logo: max width 400px, max height 200px
-                $image->resize(400, 200, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
+                $image->scale(width: 400, height: 200);
             } elseif ($type === 'favicon') {
                 // Favicon: 32x32px
-                $image->resize(32, 32);
+                $image->scale(width: 32, height: 32);
             }
 
             // Store the processed image
             $path = $directory . '/' . $filename;
 
             // Save to storage
-            $image->stream();
-            Storage::disk('public')->put($path, $image->getEncoded());
+            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
             // Get public URL
             $url = asset('storage/' . $path);
@@ -108,31 +112,25 @@ class UploadController extends Controller
             // Generate unique filename
             $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
 
-            // Process and save image
-            $image = Image::make($file);
+            // Process and save main image
+            $image = $this->imageManager->read($file);
 
-            // Gallery: max width 1200px, quality 85%
+            // Gallery: max width 1200px
             if ($image->width() > 1200) {
-                $image->resize(1200, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
+                $image->scaleDown(width: 1200);
             }
 
             // Create thumbnail
-            $thumbnail = Image::make($file);
-            $thumbnail->resize(400, null, function ($constraint) {
-                $constraint->aspectRatio();
-            });
+            $thumbnail = $this->imageManager->read($file);
+            $thumbnail->scaleDown(width: 400);
 
             // Save main image
             $path = $directory . '/' . $filename;
-            $image->stream();
-            Storage::disk('public')->put($path, $image->getEncoded());
+            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
             // Save thumbnail
             $thumbPath = $directory . '/thumb_' . $filename;
-            $thumbnail->stream();
-            Storage::disk('public')->put($thumbPath, $thumbnail->getEncoded());
+            Storage::disk('public')->put($thumbPath, $thumbnail->toJpeg(quality: 85));
 
             // Get URLs
             $url = asset('storage/' . $path);
@@ -178,19 +176,16 @@ class UploadController extends Controller
             $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Process and save image
-            $image = Image::make($file);
+            $image = $this->imageManager->read($file);
 
-            // Rental: max width 800px, quality 85%
+            // Rental: max width 800px
             if ($image->width() > 800) {
-                $image->resize(800, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
+                $image->scaleDown(width: 800);
             }
 
             // Save image
             $path = $directory . '/' . $filename;
-            $image->stream();
-            Storage::disk('public')->put($path, $image->getEncoded());
+            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
             // Get URL
             $url = asset('storage/' . $path);
@@ -234,17 +229,14 @@ class UploadController extends Controller
             $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Process and save image
-            $image = Image::make($file);
+            $image = $this->imageManager->read($file);
 
             // Team photo: 300x300px square
-            $image->fit(300, 300, function ($constraint) {
-                $constraint->upsize();
-            });
+            $image->cover(width: 300, height: 300);
 
             // Save image
             $path = $directory . '/' . $filename;
-            $image->stream();
-            Storage::disk('public')->put($path, $image->getEncoded());
+            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
             // Get URL
             $url = asset('storage/' . $path);
@@ -288,19 +280,16 @@ class UploadController extends Controller
             $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Process and save image
-            $image = Image::make($file);
+            $image = $this->imageManager->read($file);
 
-            // Service image: max width 800px, quality 85%
+            // Service image: max width 800px
             if ($image->width() > 800) {
-                $image->resize(800, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
+                $image->scaleDown(width: 800);
             }
 
             // Save image
             $path = $directory . '/' . $filename;
-            $image->stream();
-            Storage::disk('public')->put($path, $image->getEncoded());
+            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
             // Get URL
             $url = asset('storage/' . $path);
@@ -344,19 +333,16 @@ class UploadController extends Controller
             $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Process and save image
-            $image = Image::make($file);
+            $image = $this->imageManager->read($file);
 
-            // Hero image: max width 1920px, quality 85%
+            // Hero image: max width 1920px
             if ($image->width() > 1920) {
-                $image->resize(1920, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
+                $image->scaleDown(width: 1920);
             }
 
             // Save image
             $path = $directory . '/' . $filename;
-            $image->stream();
-            Storage::disk('public')->put($path, $image->getEncoded());
+            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
             // Get URL
             $url = asset('storage/' . $path);

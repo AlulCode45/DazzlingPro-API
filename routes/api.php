@@ -101,18 +101,21 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
 
         Route::apiResource('events', App\Http\Controllers\Api\V1\EventController::class);
-        Route::apiResource('testimonials', App\Http\Controllers\Api\V1\TestimonialController::class)->except(['index']);
+        Route::apiResource('testimonials', App\Http\Controllers\Api\V1\TestimonialController::class);
         Route::apiResource('galleries', App\Http\Controllers\Api\V1\GalleryController::class);
-        Route::apiResource('services', App\Http\Controllers\Api\V1\ServiceController::class)->except(['index']);
+        Route::apiResource('services', App\Http\Controllers\Api\V1\ServiceController::class);
         Route::apiResource('categories', App\Http\Controllers\Api\V1\CategoryController::class);
         Route::apiResource('portfolios', App\Http\Controllers\Api\V1\PortfolioController::class);
-        Route::apiResource('partners', App\Http\Controllers\Api\V1\PartnerController::class)->except(['index']);
+        Route::apiResource('portfolio-categories', App\Http\Controllers\Api\V1\PortfolioController::class);
+        Route::apiResource('gallery-categories', App\Http\Controllers\Api\V1\GalleryController::class);
+        Route::apiResource('partners', App\Http\Controllers\Api\V1\PartnerController::class);
 
         Route::apiResource('company-information', App\Http\Controllers\Api\V1\CompanyInformationController::class);
         Route::apiResource('hero-sections', App\Http\Controllers\Api\V1\HeroSectionController::class);
         Route::apiResource('teams', App\Http\Controllers\Api\V1\TeamController::class);
         Route::apiResource('faqs', App\Http\Controllers\Api\V1\FAQController::class);
         Route::apiResource('page-sections', App\Http\Controllers\Api\V1\PageSectionController::class);
+        Route::apiResource('event-rentals', App\Http\Controllers\Api\V1\EventRentalController::class);
 
         // Upload
         Route::prefix('upload')->group(function () {
