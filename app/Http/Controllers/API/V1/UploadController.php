@@ -291,12 +291,13 @@ class UploadController extends Controller
             $path = $directory . '/' . $filename;
             Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
 
-            // Get URL
-            $url = asset('storage/' . $path);
+            // Get URL - return as relative storage path for database storage
+            $storagePath = 'storage/' . $path;
+            $url = asset($storagePath);
 
             return ApiResponse::sendResponse('Image uploaded successfully', [
                 'url' => $url,
-                'path' => $path
+                'path' => $storagePath  // Return relative path for database
             ]);
 
         } catch (\Exception $e) {

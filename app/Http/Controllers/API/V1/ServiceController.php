@@ -38,8 +38,15 @@ class ServiceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:services,slug',
             'description' => 'required|string',
-            'icon' => 'required|string|max:10',
+            'icon_url' => 'required|string|max:10',
+            'full_description' => 'sometimes|string|nullable',
+            'features' => 'sometimes|array',
+            'packages' => 'sometimes|array',
+            'image_url' => 'sometimes|string|nullable',
+            'is_active' => 'sometimes|boolean',
+            'sort_order' => 'sometimes|integer',
         ]);
 
         if ($validator->fails()) {
@@ -48,8 +55,15 @@ class ServiceController extends Controller
 
         $service = Service::create([
             'title' => $request->title,
+            'slug' => $request->slug,
             'description' => $request->description,
-            'icon' => $request->icon,
+            'icon_url' => $request->icon_url,
+            'full_description' => $request->full_description,
+            'features' => $request->features ?? [],
+            'packages' => $request->packages ?? [],
+            'image_url' => $request->image_url,
+            'is_active' => $request->is_active ?? true,
+            'sort_order' => $request->sort_order ?? 0,
         ]);
 
         return $this->sendResponse($service, 'Service created successfully.', 201);
@@ -70,15 +84,41 @@ class ServiceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string|max:255',
+            'slug' => 'sometimes|required|string|max:255|unique:services,slug,' . $service->id,
             'description' => 'sometimes|required|string',
-            'icon' => 'sometimes|required|string|max:10',
+            'icon_url' => 'sometimes|required|string|max:10',
+            'full_description' => 'sometimes|string|nullable',
+            'features' => 'sometimes|array',
+            'packages' => 'sometimes|array',
+            'image_url' => 'sometimes|string|nullable',
+            'is_active' => 'sometimes|boolean',
+            'sort_order' => 'sometimes|integer',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError('Error validasi.', $validator->errors(), 422);
         }
 
-        $service->update($request->only(['title', 'description', 'icon']));
+        // Prepare update data
+        $updateData = $request->only([
+            'title',
+            'slug',
+            'description',
+            'icon_url',
+            'full_description',
+            'features',
+            'packages',
+            'image_url',
+            'is_active',
+            'sort_order',
+        ]);
+
+        // Filter out null values to avoid overwriting with nulls
+        $updateData = array_filter($updateData, function ($value) {
+            return $value !== null;
+        });
+
+        $service->update($updateData);
 
         return $this->sendResponse($service, 'Service updated successfully.');
     }
