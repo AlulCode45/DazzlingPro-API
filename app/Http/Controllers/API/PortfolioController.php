@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\Controller;
 use App\Models\Portfolio;
@@ -33,8 +33,8 @@ class PortfolioController extends Controller
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('title', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%')
-                      ->orWhere('client_name', 'like', '%' . $request->search . '%');
+                    ->orWhere('description', 'like', '%' . $request->search . '%')
+                    ->orWhere('client_name', 'like', '%' . $request->search . '%');
             })
             ->when($request->has('event_date_from'), function ($query) use ($request) {
                 $query->whereDate('event_date', '>=', $request->event_date_from);

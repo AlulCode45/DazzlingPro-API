@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\Controller;
 use App\Models\EventRental;
@@ -38,8 +38,8 @@ class EventRentalController extends Controller
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%')
-                      ->orWhere('location', 'like', '%' . $request->search . '%');
+                    ->orWhere('description', 'like', '%' . $request->search . '%')
+                    ->orWhere('location', 'like', '%' . $request->search . '%');
             })
             ->orderBy('sort_order', 'asc')
             ->orderBy('created_at', 'desc')

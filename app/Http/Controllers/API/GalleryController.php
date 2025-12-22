@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\Controller;
 use App\Models\Gallery;
@@ -30,7 +30,7 @@ class GalleryController extends Controller
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('title', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%');
+                    ->orWhere('description', 'like', '%' . $request->search . '%');
             })
             ->with(['category'])
             ->orderBy('sort_order', 'asc')

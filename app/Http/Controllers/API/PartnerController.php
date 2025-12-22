@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\Controller;
 use App\Models\Partner;
@@ -26,7 +26,7 @@ class PartnerController extends Controller
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%');
+                    ->orWhere('description', 'like', '%' . $request->search . '%');
             })
             ->orderBy('sort_order', 'asc')
             ->orderBy('created_at', 'desc')
