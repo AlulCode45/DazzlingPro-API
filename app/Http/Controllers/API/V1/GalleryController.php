@@ -108,11 +108,7 @@ class GalleryController extends Controller
             }, $gallery->images);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $gallery,
-            'message' => 'Gallery created successfully.',
-        ], 201);
+        return $this->sendResponse($gallery, 'Gallery created successfully.');
     }
 
     /**
@@ -204,11 +200,7 @@ class GalleryController extends Controller
             }, $gallery->images);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $gallery,
-            'message' => 'Gallery updated successfully.',
-        ]);
+        return $this->sendResponse($gallery, 'Gallery updated successfully.');
     }
 
     /**

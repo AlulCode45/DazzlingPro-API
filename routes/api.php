@@ -103,11 +103,14 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('events', App\Http\Controllers\Api\V1\EventController::class);
         Route::apiResource('testimonials', App\Http\Controllers\Api\V1\TestimonialController::class);
         Route::apiResource('galleries', App\Http\Controllers\Api\V1\GalleryController::class);
+
+        // Gallery categories - use custom route to get categories list
+        Route::get('gallery-categories', [App\Http\Controllers\Api\V1\GalleryController::class, 'categories']);
+
         Route::apiResource('services', App\Http\Controllers\Api\V1\ServiceController::class);
         Route::apiResource('categories', App\Http\Controllers\Api\V1\CategoryController::class);
         Route::apiResource('portfolios', App\Http\Controllers\Api\V1\PortfolioController::class);
         Route::apiResource('portfolio-categories', App\Http\Controllers\Api\V1\PortfolioController::class);
-        Route::apiResource('gallery-categories', App\Http\Controllers\Api\V1\GalleryController::class);
         Route::apiResource('partners', App\Http\Controllers\Api\V1\PartnerController::class);
 
         Route::apiResource('company-information', App\Http\Controllers\Api\V1\CompanyInformationController::class);
