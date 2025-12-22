@@ -14,10 +14,7 @@ class GalleryCategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            [
-                'name' => 'Wedding',
-                'slug' => 'wedding',
-            ],
+            // EVENT CATEGORIES
             [
                 'name' => 'Corporate',
                 'slug' => 'corporate',
@@ -31,17 +28,33 @@ class GalleryCategorySeeder extends Seeder
                 'slug' => 'ceremony',
             ],
             [
-                'name' => 'Concert',
-                'slug' => 'concert',
+                'name' => 'Workshop',
+                'slug' => 'workshop',
             ],
             [
-                'name' => 'Private',
-                'slug' => 'private',
+                'name' => 'Birthday Party',
+                'slug' => 'birthday-party',
+            ],
+            // WEDDING CATEGORIES
+            [
+                'name' => 'Wedding',
+                'slug' => 'wedding',
+            ],
+            [
+                'name' => 'Prewedding',
+                'slug' => 'prewedding',
+            ],
+            [
+                'name' => 'Engagement',
+                'slug' => 'engagement',
             ],
         ];
 
         foreach ($categories as $category) {
-            GalleryCategory::create($category);
+            GalleryCategory::updateOrCreate(
+                ['slug' => $category['slug']],
+                ['name' => $category['name']]
+            );
         }
     }
 }
