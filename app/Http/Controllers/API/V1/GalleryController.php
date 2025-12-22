@@ -34,8 +34,13 @@ class GalleryController extends Controller
 
         // Add full URL to images
         $galleries->transform(function ($gallery) {
-            if ($gallery->image_url && !str_starts_with($gallery->image_url, 'http')) {
-                $gallery->image_url = url($gallery->image_url);
+            if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
+                $gallery->featured_image = url($gallery->featured_image);
+            }
+            if ($gallery->images) {
+                $gallery->images = array_map(function ($img) {
+                    return str_starts_with($img, 'http') ? $img : url($img);
+                }, $gallery->images);
             }
             return $gallery;
         });
@@ -54,7 +59,9 @@ class GalleryController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:gallery_categories,id',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // Max 5MB
+            'featured_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
             'is_featured' => 'sometimes|boolean'
         ]);
 
@@ -62,26 +69,43 @@ class GalleryController extends Controller
             return $this->sendError('Error validasi.', $validator->errors(), 422);
         }
 
-        // Handle file upload
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+        // Handle featured image upload
+        $featuredImagePath = null;
+        if ($request->hasFile('featured_image')) {
+            $image = $request->file('featured_image');
+            $imageName = time() . '_featured_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/gallery'), $imageName);
-            $imagePath = 'uploads/gallery/' . $imageName;
+            $featuredImagePath = 'uploads/gallery/' . $imageName;
+        }
+
+        // Handle multiple images upload
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/gallery'), $imageName);
+                $imagePaths[] = 'uploads/gallery/' . $imageName;
+            }
         }
 
         $gallery = Gallery::create([
             'title' => $request->title,
             'category_id' => $request->category_id,
-            'image_url' => $imagePath ?? $request->image_url,
+            'featured_image' => $featuredImagePath,
+            'images' => $imagePaths,
             'is_featured' => $request->is_featured ?? false,
         ]);
 
         $gallery->load('category');
 
-        // Add full URL to image
-        if ($gallery->image_url && !str_starts_with($gallery->image_url, 'http')) {
-            $gallery->image_url = url($gallery->image_url);
+        // Add full URL to images
+        if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
+            $gallery->featured_image = url($gallery->featured_image);
+        }
+        if ($gallery->images) {
+            $gallery->images = array_map(function ($img) {
+                return str_starts_with($img, 'http') ? $img : url($img);
+            }, $gallery->images);
         }
 
         return response()->json([
@@ -101,9 +125,14 @@ class GalleryController extends Controller
     {
         $gallery->load('category');
 
-        // Add full URL to image
-        if ($gallery->image_url && !str_starts_with($gallery->image_url, 'http')) {
-            $gallery->image_url = url($gallery->image_url);
+        // Add full URL to images
+        if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
+            $gallery->featured_image = url($gallery->featured_image);
+        }
+        if ($gallery->images) {
+            $gallery->images = array_map(function ($img) {
+                return str_starts_with($img, 'http') ? $img : url($img);
+            }, $gallery->images);
         }
 
         return $this->sendResponse($gallery, 'Gallery retrieved successfully.');
@@ -121,7 +150,11 @@ class GalleryController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string|max:255',
             'category_id' => 'sometimes|required|exists:gallery_categories,id',
-            'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120', // Max 5MB
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'existing_images' => 'nullable|array',
+            'existing_images.*' => 'string',
             'is_featured' => 'sometimes|boolean'
         ]);
 
@@ -131,20 +164,44 @@ class GalleryController extends Controller
 
         $updateData = $request->only(['title', 'category_id', 'is_featured']);
 
-        // Handle file upload if present
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+        // Handle featured image upload
+        if ($request->hasFile('featured_image')) {
+            // Delete old featured image
+            if ($gallery->featured_image && file_exists(public_path($gallery->featured_image))) {
+                @unlink(public_path($gallery->featured_image));
+            }
+            $image = $request->file('featured_image');
+            $imageName = time() . '_featured_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/gallery'), $imageName);
-            $updateData['image_url'] = 'uploads/gallery/' . $imageName;
+            $updateData['featured_image'] = 'uploads/gallery/' . $imageName;
         }
+
+        // Handle multiple images
+        $existingImages = $request->existing_images ?? [];
+        $newImagePaths = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/gallery'), $imageName);
+                $newImagePaths[] = 'uploads/gallery/' . $imageName;
+            }
+        }
+
+        // Combine existing and new images
+        $updateData['images'] = array_merge($existingImages, $newImagePaths);
 
         $gallery->update($updateData);
         $gallery->load('category');
 
-        // Add full URL to image
-        if ($gallery->image_url && !str_starts_with($gallery->image_url, 'http')) {
-            $gallery->image_url = url($gallery->image_url);
+        // Add full URL to images
+        if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
+            $gallery->featured_image = url($gallery->featured_image);
+        }
+        if ($gallery->images) {
+            $gallery->images = array_map(function ($img) {
+                return str_starts_with($img, 'http') ? $img : url($img);
+            }, $gallery->images);
         }
 
         return response()->json([

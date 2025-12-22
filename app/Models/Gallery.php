@@ -12,11 +12,13 @@ class Gallery extends Model
     protected $fillable = [
         'title',
         'category_id',
-        'image_url',
+        'images',
+        'featured_image',
         'is_featured',
     ];
 
     protected $casts = [
+        'images' => 'array',
         'is_featured' => 'boolean',
     ];
 
