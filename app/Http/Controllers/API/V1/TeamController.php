@@ -19,6 +19,15 @@ class TeamController extends Controller
     public function index(): JsonResponse
     {
         $teams = Team::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+
+        // Add full URL to images
+        $teams->transform(function ($team) {
+            if ($team->photo_url && !str_starts_with($team->photo_url, 'http')) {
+                $team->photo_url = url($team->photo_url);
+            }
+            return $team;
+        });
+
         return $this->sendResponse($teams, 'Team members retrieved successfully.');
     }
 
@@ -37,7 +46,7 @@ class TeamController extends Controller
             'bio' => 'nullable|string',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
-            'photo_url' => 'nullable|url|max:500',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'social_links' => 'nullable|array',
             'social_links.*.platform' => 'required|string|max:50',
             'social_links.*.url' => 'required|url|max:255',
@@ -50,12 +59,22 @@ class TeamController extends Controller
             'name.required' => 'Name is required',
             'position.required' => 'Position is required',
             'email.email' => 'Email must be a valid email address',
-            'photo_url.url' => 'Photo URL must be a valid URL',
+            'photo.image' => 'Photo must be an image',
+            'photo.max' => 'Photo size must not exceed 5MB',
             'order.min' => 'Order must be at least 0',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError('Validation error.', $validator->errors());
+        }
+
+        // Handle file upload
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $image = $request->file('photo');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/team'), $imageName);
+            $photoPath = 'uploads/team/' . $imageName;
         }
 
         // Handle social links from array to individual fields
@@ -82,7 +101,7 @@ class TeamController extends Controller
             'bio' => $request->bio,
             'email' => $request->email,
             'phone' => $request->phone,
-            'photo_url' => $request->photo_url,
+            'photo_url' => $photoPath,
             'linkedin_url' => $socialFields['linkedin_url'],
             'instagram_url' => $socialFields['instagram_url'],
             'facebook_url' => $socialFields['facebook_url'],
@@ -92,6 +111,11 @@ class TeamController extends Controller
             'is_featured' => $request->is_featured ?? false,
             'sort_order' => $request->order ?? 0,
         ]);
+
+        // Add full URL to image
+        if ($team->photo_url && !str_starts_with($team->photo_url, 'http')) {
+            $team->photo_url = url($team->photo_url);
+        }
 
         return $this->sendResponse($team, 'Team member created successfully.');
     }
@@ -123,7 +147,7 @@ class TeamController extends Controller
             'bio' => 'nullable|string',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
-            'photo_url' => 'nullable|url|max:500',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'social_links' => 'nullable|array',
             'social_links.*.platform' => 'required|string|max:50',
             'social_links.*.url' => 'required|url|max:255',
@@ -138,37 +162,60 @@ class TeamController extends Controller
             return $this->sendError('Validation error.', $validator->errors());
         }
 
+        // Handle file upload
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($team->photo_url && file_exists(public_path($team->photo_url))) {
+                @unlink(public_path($team->photo_url));
+            }
+
+            $image = $request->file('photo');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/team'), $imageName);
+            $photoPath = 'uploads/team/' . $imageName;
+        }
+
         // Handle social links from array to individual fields
-      $socialLinks = $request->social_links ?? [];
-      $socialFields = [
-          'linkedin_url' => null,
-          'instagram_url' => null,
-          'facebook_url' => null,
-          'twitter_url' => null,
-      ];
+        $socialLinks = $request->social_links ?? [];
+        $socialFields = [
+            'linkedin_url' => null,
+            'instagram_url' => null,
+            'facebook_url' => null,
+            'twitter_url' => null,
+        ];
 
-      foreach ($socialLinks as $link) {
-          $platform = strtolower($link['platform']);
-          if (isset($socialFields[$platform . '_url'])) {
-              $socialFields[$platform . '_url'] = $link['url'];
-          }
-      }
+        foreach ($socialLinks as $link) {
+            $platform = strtolower($link['platform']);
+            if (isset($socialFields[$platform . '_url'])) {
+                $socialFields[$platform . '_url'] = $link['url'];
+            }
+        }
 
-      $updateData = $request->except(['social_links', 'skills']);
-      $updateData = array_merge($updateData, $socialFields);
+        $updateData = $request->except(['social_links', 'skills', 'photo']);
+        $updateData = array_merge($updateData, $socialFields);
 
-      // Update slug if name changed
-      if ($team->name !== $request->name) {
-          $updateData['slug'] = Str::slug($request->name);
-      }
+        // Add photo path if uploaded
+        if (isset($photoPath)) {
+            $updateData['photo_url'] = $photoPath;
+        }
 
-      $team->update($updateData);
+        // Update slug if name changed
+        if ($team->name !== $request->name) {
+            $updateData['slug'] = Str::slug($request->name);
+        }
 
-      // Handle skills separately since it needs casting
-      if ($request->has('skills')) {
-          $team->skills = $request->skills;
-          $team->save();
-      }
+        $team->update($updateData);
+
+        // Handle skills separately since it needs casting
+        if ($request->has('skills')) {
+            $team->skills = $request->skills;
+            $team->save();
+        }
+
+        // Add full URL to image
+        if ($team->photo_url && !str_starts_with($team->photo_url, 'http')) {
+            $team->photo_url = url($team->photo_url);
+        }
 
         return $this->sendResponse($team, 'Team member updated successfully.');
     }
