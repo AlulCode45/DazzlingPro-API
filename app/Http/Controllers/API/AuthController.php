@@ -72,7 +72,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        return $this->sendResponse($user->toArray(), 'User profile retrieved successfully.');
+        return $this->sendResponse($user->toArray(), 'Profil berhasil diambil.');
     }
 
     /**
@@ -87,10 +87,19 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+        ], [
+            'name.required' => 'Nama harus diisi.',
+            'name.max' => 'Nama maksimal 255 karakter.',
+            'email.required' => 'Email harus diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password harus diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
         if ($validator->fails()) {
-            return $this->sendError('Validation Error.', $validator->errors(), 422);
+            return $this->sendError('Data yang dimasukkan tidak valid.', $validator->errors(), 422);
         }
 
         $user = User::create([
@@ -108,6 +117,6 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
             'token' => $token,
             'expires_at' => now()->addDays(30)->toDateTimeString()
-        ], 'User registered successfully.', 201);
+        ], 'Registrasi berhasil.', 201);
     }
 }
