@@ -31,6 +31,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Handle POST data too large exception
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ukuran file terlalu besar. Maksimal 100MB per upload.',
+                ], 413);
+            }
+        });
+
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([
