@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Controller;
 use App\Models\Team;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -11,6 +12,12 @@ use Illuminate\Support\Str;
 
 class TeamController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -71,10 +78,15 @@ class TeamController extends Controller
         // Handle file upload
         $photoPath = null;
         if ($request->hasFile('photo')) {
-            $image = $request->file('photo');
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/team'), $imageName);
-            $photoPath = 'uploads/team/' . $imageName;
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('photo'),
+                    'team'
+                );
+                $photoPath = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload photo: ' . $e->getMessage(), [], 422);
+            }
         }
 
         // Handle social links from array to individual fields
@@ -164,15 +176,16 @@ class TeamController extends Controller
 
         // Handle file upload
         if ($request->hasFile('photo')) {
-            // Delete old photo if exists
-            if ($team->photo_url && file_exists(public_path($team->photo_url))) {
-                @unlink(public_path($team->photo_url));
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('photo'),
+                    'team',
+                    $team->photo_url
+                );
+                $photoPath = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload photo: ' . $e->getMessage(), [], 422);
             }
-
-            $image = $request->file('photo');
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/team'), $imageName);
-            $photoPath = 'uploads/team/' . $imageName;
         }
 
         // Handle social links from array to individual fields

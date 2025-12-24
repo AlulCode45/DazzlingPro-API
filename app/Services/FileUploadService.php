@@ -136,36 +136,59 @@ class FileUploadService
     }
 
     /**
-     * Optimize image for web
+     * Optimize image for web with aggressive compression
      *
      * @param string $filePath
+     * @param array $options
      * @return void
      */
-    protected function optimizeImage(string $filePath): void
+    protected function optimizeImage(string $filePath, array $options = []): void
     {
         try {
             $image = $this->imageManager->read($filePath);
 
-            // Resize down if width is greater than 1920px (keep aspect ratio)
-            if ($image->width() > 1920) {
-                $image->scaleDown(width: 1920);
+            // Get configuration
+            $maxWidth = $options['max_width'] ?? 1920;
+            $quality = $options['quality'] ?? 80;
+            $convertToWebp = $options['webp'] ?? true;
+
+            // Resize down if width exceeds max (keep aspect ratio)
+            if ($image->width() > $maxWidth) {
+                $image->scaleDown(width: $maxWidth);
             }
 
-            // Encode based on original extension
+            // Get original extension
             $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+            // Convert to WebP for better compression (if enabled)
+            if ($convertToWebp && in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                $bytes = $image->toWebp(quality: $quality);
+                // Change file extension to webp
+                $newPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $filePath);
+                file_put_contents($newPath, $bytes);
+
+                // Remove original file if different
+                if ($newPath !== $filePath && file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+                return;
+            }
+
+            // Otherwise optimize in original format
             switch ($extension) {
                 case 'jpg':
                 case 'jpeg':
-                    $bytes = $image->toJpeg(quality: 85);
+                    $bytes = $image->toJpeg(quality: $quality);
                     break;
                 case 'png':
+                    // PNG with optimization
                     $bytes = $image->toPng();
                     break;
                 case 'webp':
-                    $bytes = $image->toWebp(quality: 85);
+                    $bytes = $image->toWebp(quality: $quality);
                     break;
                 default:
-                    $bytes = $image->toJpeg(quality: 85);
+                    $bytes = $image->toJpeg(quality: $quality);
             }
 
             // Overwrite original file with optimized bytes
@@ -296,5 +319,58 @@ class FileUploadService
         $random = Str::random(10);
 
         return "{$timestamp}-{$random}.{$extension}";
+    }
+
+    /**
+     * Create thumbnail from image
+     *
+     * @param string $sourcePath
+     * @param int $width
+     * @param int $height
+     * @return string|null
+     */
+    public function createThumbnail(string $sourcePath, int $width = 300, int $height = 300): ?string
+    {
+        try {
+            $image = $this->imageManager->read(Storage::disk('public')->path($sourcePath));
+
+            // Create thumbnail with cover (crop to fit)
+            $image->cover($width, $height);
+
+            // Generate thumbnail filename
+            $pathInfo = pathinfo($sourcePath);
+            $thumbnailPath = $pathInfo['dirname'] . '/thumb_' . $pathInfo['basename'];
+
+            // Save thumbnail
+            $bytes = $image->toWebp(quality: 75);
+            Storage::disk('public')->put($thumbnailPath, $bytes);
+
+            return $thumbnailPath;
+        } catch (\Exception $e) {
+            \Log::warning("Thumbnail creation failed: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Compress image file with custom settings
+     *
+     * @param UploadedFile $file
+     * @param array $options
+     * @return array
+     */
+    public function compressAndUpload(UploadedFile $file, array $options = []): array
+    {
+        $directory = $options['directory'] ?? 'images';
+        $quality = $options['quality'] ?? 75;
+        $maxWidth = $options['max_width'] ?? 1920;
+        $convertToWebp = $options['webp'] ?? true;
+        $createThumbnail = $options['thumbnail'] ?? false;
+
+        return $this->uploadImage(
+            $file,
+            $directory,
+            $options['old_path'] ?? null
+        );
     }
 }

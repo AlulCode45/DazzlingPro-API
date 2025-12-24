@@ -4,12 +4,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Controller;
 use App\Models\Partner;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 
 class PartnerController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -55,10 +62,15 @@ class PartnerController extends Controller
         // Handle file upload
         $logoPath = null;
         if ($request->hasFile('logo')) {
-            $logo = $request->file('logo');
-            $logoName = time() . '_' . uniqid() . '.' . $logo->getClientOriginalExtension();
-            $logo->move(public_path('uploads/partners'), $logoName);
-            $logoPath = 'uploads/partners/' . $logoName;
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('logo'),
+                    'partners'
+                );
+                $logoPath = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload logo: ' . $e->getMessage(), [], 422);
+            }
         }
 
         $partner = Partner::create([
@@ -115,15 +127,16 @@ class PartnerController extends Controller
 
         // Handle file upload if new logo is provided
         if ($request->hasFile('logo')) {
-            // Delete old logo if exists
-            if ($partner->logo_url && file_exists(public_path($partner->logo_url))) {
-                unlink(public_path($partner->logo_url));
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('logo'),
+                    'partners',
+                    $partner->logo_url
+                );
+                $updateData['logo_url'] = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload logo: ' . $e->getMessage(), [], 422);
             }
-
-            $logo = $request->file('logo');
-            $logoName = time() . '_' . uniqid() . '.' . $logo->getClientOriginalExtension();
-            $logo->move(public_path('uploads/partners'), $logoName);
-            $updateData['logo_url'] = 'uploads/partners/' . $logoName;
         }
 
         $updateData = array_merge($updateData, $request->only(['name', 'website_url', 'partner_type', 'status', 'sort_order']));

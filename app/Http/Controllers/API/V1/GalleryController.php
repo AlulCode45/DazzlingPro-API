@@ -5,12 +5,20 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Api\V1\Controller;
 use App\Models\Gallery;
 use App\Models\GalleryCategory;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 
 class GalleryController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -72,19 +80,30 @@ class GalleryController extends Controller
         // Handle featured image upload
         $featuredImagePath = null;
         if ($request->hasFile('featured_image')) {
-            $image = $request->file('featured_image');
-            $imageName = time() . '_featured_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/gallery'), $imageName);
-            $featuredImagePath = 'uploads/gallery/' . $imageName;
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('featured_image'),
+                    'gallery/featured'
+                );
+                $featuredImagePath = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload featured image: ' . $e->getMessage(), [], 422);
+            }
         }
 
         // Handle multiple images upload
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/gallery'), $imageName);
-                $imagePaths[] = 'uploads/gallery/' . $imageName;
+                try {
+                    $uploadResult = $this->fileUploadService->uploadImage(
+                        $image,
+                        'gallery/images'
+                    );
+                    $imagePaths[] = $uploadResult['path'];
+                } catch (\Exception $e) {
+                    return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
+                }
             }
         }
 
@@ -162,14 +181,16 @@ class GalleryController extends Controller
 
         // Handle featured image upload
         if ($request->hasFile('featured_image')) {
-            // Delete old featured image
-            if ($gallery->featured_image && file_exists(public_path($gallery->featured_image))) {
-                @unlink(public_path($gallery->featured_image));
+            try {
+                $uploadResult = $this->fileUploadService->uploadImage(
+                    $request->file('featured_image'),
+                    'gallery/featured',
+                    $gallery->featured_image
+                );
+                $updateData['featured_image'] = $uploadResult['path'];
+            } catch (\Exception $e) {
+                return $this->sendError('Failed to upload featured image: ' . $e->getMessage(), [], 422);
             }
-            $image = $request->file('featured_image');
-            $imageName = time() . '_featured_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/gallery'), $imageName);
-            $updateData['featured_image'] = 'uploads/gallery/' . $imageName;
         }
 
         // Handle multiple images
@@ -178,9 +199,15 @@ class GalleryController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/gallery'), $imageName);
-                $newImagePaths[] = 'uploads/gallery/' . $imageName;
+                try {
+                    $uploadResult = $this->fileUploadService->uploadImage(
+                        $image,
+                        'gallery/images'
+                    );
+                    $newImagePaths[] = $uploadResult['path'];
+                } catch (\Exception $e) {
+                    return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
+                }
             }
         }
 

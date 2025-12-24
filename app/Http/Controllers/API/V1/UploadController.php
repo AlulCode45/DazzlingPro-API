@@ -64,11 +64,19 @@ class UploadController extends Controller
                 $image->scale(width: 32, height: 32);
             }
 
-            // Store the processed image
+            // Store the processed image with compression
             $path = $directory . '/' . $filename;
 
-            // Save to storage
-            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
+            // Save to storage with better compression
+            // Use WebP for better compression, fallback to JPEG
+            $extension = strtolower($file->getClientOriginalExtension());
+            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                $filename = pathinfo($filename, PATHINFO_FILENAME) . '.webp';
+                $path = $directory . '/' . $filename;
+                Storage::disk('public')->put($path, $image->toWebp(quality: 80));
+            } else {
+                Storage::disk('public')->put($path, $image->toJpeg(quality: 80));
+            }
 
             // Get public URL
             $url = asset('storage/' . $path);
@@ -115,22 +123,25 @@ class UploadController extends Controller
             // Process and save main image
             $image = $this->imageManager->read($file);
 
-            // Gallery: max width 1200px
-            if ($image->width() > 1200) {
-                $image->scaleDown(width: 1200);
+            // Gallery: max width 1920px (reduced from unlimited)
+            if ($image->width() > 1920) {
+                $image->scaleDown(width: 1920);
             }
+
+            // Convert filename to webp for better compression
+            $filename = pathinfo($filename, PATHINFO_FILENAME) . '.webp';
 
             // Create thumbnail
             $thumbnail = $this->imageManager->read($file);
             $thumbnail->scaleDown(width: 400);
 
-            // Save main image
+            // Save main image with WebP compression
             $path = $directory . '/' . $filename;
-            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
+            Storage::disk('public')->put($path, $image->toWebp(quality: 80));
 
-            // Save thumbnail
+            // Save thumbnail with WebP compression
             $thumbPath = $directory . '/thumb_' . $filename;
-            Storage::disk('public')->put($thumbPath, $thumbnail->toJpeg(quality: 85));
+            Storage::disk('public')->put($thumbPath, $thumbnail->toWebp(quality: 75));
 
             // Get URLs
             $url = asset('storage/' . $path);
@@ -173,19 +184,19 @@ class UploadController extends Controller
             $directory = "rental/" . date('Y/m');
 
             // Generate unique filename
-            $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid() . '_' . time() . '.webp';
 
             // Process and save image
             $image = $this->imageManager->read($file);
 
-            // Rental: max width 800px
-            if ($image->width() > 800) {
-                $image->scaleDown(width: 800);
+            // Rental: max width 1200px (increased for better quality)
+            if ($image->width() > 1200) {
+                $image->scaleDown(width: 1200);
             }
 
-            // Save image
+            // Save image with WebP compression
             $path = $directory . '/' . $filename;
-            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
+            Storage::disk('public')->put($path, $image->toWebp(quality: 80));
 
             // Get URL
             $url = asset('storage/' . $path);
@@ -226,17 +237,17 @@ class UploadController extends Controller
             $directory = "team/" . date('Y/m');
 
             // Generate unique filename
-            $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid() . '_' . time() . '.webp';
 
             // Process and save image
             $image = $this->imageManager->read($file);
 
-            // Team photo: 300x300px square
-            $image->cover(width: 300, height: 300);
+            // Team photo: 400x400px square (increased for better quality)
+            $image->cover(width: 400, height: 400);
 
-            // Save image
+            // Save image with WebP compression
             $path = $directory . '/' . $filename;
-            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
+            Storage::disk('public')->put($path, $image->toWebp(quality: 80));
 
             // Get URL
             $url = asset('storage/' . $path);
@@ -277,19 +288,19 @@ class UploadController extends Controller
             $directory = "services/" . date('Y/m');
 
             // Generate unique filename
-            $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid() . '_' . time() . '.webp';
 
             // Process and save image
             $image = $this->imageManager->read($file);
 
-            // Service image: max width 800px
-            if ($image->width() > 800) {
-                $image->scaleDown(width: 800);
+            // Service image: max width 1200px (increased for better quality)
+            if ($image->width() > 1200) {
+                $image->scaleDown(width: 1200);
             }
 
-            // Save image
+            // Save image with WebP compression
             $path = $directory . '/' . $filename;
-            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
+            Storage::disk('public')->put($path, $image->toWebp(quality: 80));
 
             // Get URL - return as relative storage path for database storage
             $storagePath = 'storage/' . $path;
@@ -331,7 +342,7 @@ class UploadController extends Controller
             $directory = "hero/" . date('Y/m');
 
             // Generate unique filename
-            $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid() . '_' . time() . '.webp';
 
             // Process and save image
             $image = $this->imageManager->read($file);
@@ -341,9 +352,9 @@ class UploadController extends Controller
                 $image->scaleDown(width: 1920);
             }
 
-            // Save image
+            // Save image with WebP compression
             $path = $directory . '/' . $filename;
-            Storage::disk('public')->put($path, $image->toJpeg(quality: 85));
+            Storage::disk('public')->put($path, $image->toWebp(quality: 80));
 
             // Get URL
             $url = asset('storage/' . $path);
