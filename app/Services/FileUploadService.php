@@ -50,28 +50,41 @@ class FileUploadService
             $this->deleteImage($oldPath);
         }
 
-        // Generate unique filename
-        $filename = $this->generateUniqueFilename($file);
+        // Generate unique filename with webp extension
+        $filename = $this->generateUniqueFilenameWebp($file);
 
         // Create directory if it doesn't exist
         $fullDirectory = "public/{$directory}";
         Storage::makeDirectory($fullDirectory);
 
-        // Store the file
-        $path = $file->storeAs($directory, $filename, 'public');
+        // Store the file temporarily
+        $tempFilename = $this->generateUniqueFilename($file);
+        $tempPath = $file->storeAs($directory, $tempFilename, 'public');
+        $tempFullPath = Storage::path("public/{$tempPath}");
 
-        // Optimize image if it's a valid image
-        $this->optimizeImage(Storage::path("public/{$path}"));
+        // Optimize and convert to WebP
+        $finalPath = $directory . '/' . $filename;
+        $finalFullPath = Storage::path("public/{$finalPath}");
+
+        $this->optimizeImageAndConvert($tempFullPath, $finalFullPath);
+
+        // Delete temp file if different from final
+        if ($tempFullPath !== $finalFullPath && file_exists($tempFullPath)) {
+            @unlink($tempFullPath);
+        }
 
         // Get public URL
-        $url = Storage::url($path);
+        $url = Storage::url($finalPath);
+
+        // Get final file size
+        $finalSize = file_exists($finalFullPath) ? filesize($finalFullPath) : $file->getSize();
 
         return [
-            'path' => $path,
+            'path' => $finalPath,
             'url' => $url,
             'filename' => $filename,
-            'size' => $file->getSize(),
-            'mime_type' => $file->getMimeType()
+            'size' => $finalSize,
+            'mime_type' => 'image/webp'
         ];
     }
 
@@ -133,6 +146,20 @@ class FileUploadService
         $random = Str::random(10);
 
         return "{$timestamp}-{$random}.{$extension}";
+    }
+
+    /**
+     * Generate unique filename with webp extension
+     *
+     * @param UploadedFile $file
+     * @return string
+     */
+    protected function generateUniqueFilenameWebp(UploadedFile $file): string
+    {
+        $timestamp = now()->format('Y-m-d-His');
+        $random = Str::random(10);
+
+        return "{$timestamp}-{$random}.webp";
     }
 
     /**
@@ -200,35 +227,38 @@ class FileUploadService
     }
 
     /**
-     * Get file info from URL or path
+     * Optimize image and convert to WebP
      *
-     * @param string $pathOrUrl
-     * @return array|null
+     * @param string $sourcePath
+     * @param string $destinationPath
+     * @param array $options
+     * @return void
      */
-    public function getFileInfo(string $pathOrUrl): ?array
+    protected function optimizeImageAndConvert(string $sourcePath, string $destinationPath, array $options = []): void
     {
-        // Convert URL to path if needed
-        $path = str_replace('/storage', '', $pathOrUrl);
-        $path = ltrim($path, '/');
+        try {
+            $image = $this->imageManager->read($sourcePath);
 
-        if (Storage::disk('public')->exists($path)) {
-            $fullPath = Storage::disk('public')->path($path);
-            if (file_exists($fullPath)) {
-                $imageInfo = getimagesize($fullPath);
-                $fileSize = filesize($fullPath);
+            // Get configuration
+            $maxWidth = $options['max_width'] ?? 1920;
+            $quality = $options['quality'] ?? 80;
 
-                return [
-                    'path' => $path,
-                    'url' => Storage::url($path),
-                    'size' => $fileSize,
-                    'width' => $imageInfo[0] ?? null,
-                    'height' => $imageInfo[1] ?? null,
-                    'mime_type' => mime_content_type($fullPath)
-                ];
+            // Resize down if width exceeds max (keep aspect ratio)
+            if ($image->width() > $maxWidth) {
+                $image->scaleDown(width: $maxWidth);
+            }
+
+            // Convert to WebP
+            $bytes = $image->toWebp(quality: $quality);
+            file_put_contents($destinationPath, $bytes);
+        } catch (\Exception $e) {
+            // Log error but don't fail the upload
+            \Log::warning("Image optimization failed: " . $e->getMessage());
+            // Fallback: copy original file
+            if (file_exists($sourcePath)) {
+                copy($sourcePath, $destinationPath);
             }
         }
-
-        return null;
     }
 
     /**
@@ -276,34 +306,26 @@ class FileUploadService
             $this->deleteImage($oldPath);
         }
 
-        // Generate filename based on MIME type
-        $extension = match ($mimeType) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            default => 'jpg'
-        };
-
-        $filename = $this->generateUniqueFilenameFromExtension($extension);
+        // Generate webp filename
+        $filename = now()->format('Y-m-d-His') . '-' . Str::random(10) . '.webp';
         $fullDirectory = "public/{$directory}";
         Storage::makeDirectory($fullDirectory);
 
-        // Store the file
+        // Store and convert to webp
         $path = "{$directory}/{$filename}";
-        Storage::disk('public')->put($path, $imageData);
+        $finalFullPath = Storage::path("public/{$path}");
+
+        $this->optimizeImageAndConvert($tempPath, $finalFullPath);
 
         // Clean up temp file
         unlink($tempPath);
-
-        // Optimize the stored image
-        $this->optimizeImage(Storage::disk('public')->path($path));
 
         return [
             'path' => $path,
             'url' => Storage::url($path),
             'filename' => $filename,
-            'size' => $fileSize,
-            'mime_type' => $mimeType
+            'size' => filesize($finalFullPath),
+            'mime_type' => 'image/webp'
         ];
     }
 
