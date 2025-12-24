@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Controller;
-use App\Http\Requests\API\V1\StoreTestimonialRequest;
-use App\Http\Requests\API\V1\UpdateTestimonialRequest;
-use App\Http\Requests\API\V1\GetTestimonialsRequest;
-use App\Http\Resources\API\V1\TestimonialResource;
-use App\Http\Resources\API\V1\TestimonialCollection;
+use App\Http\Requests\Api\V1\StoreTestimonialRequest;
+use App\Http\Requests\Api\V1\UpdateTestimonialRequest;
+use App\Http\Requests\Api\V1\GetTestimonialsRequest;
+use App\Http\Resources\Api\V1\TestimonialResource;
+use App\Http\Resources\Api\V1\TestimonialCollection;
 use App\Services\Contracts\TestimonialServiceInterface;
 use App\Services\FileUploadService;
 use Illuminate\Http\JsonResponse;

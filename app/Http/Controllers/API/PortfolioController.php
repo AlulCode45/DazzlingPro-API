@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\Controller;
+use App\Http\Controllers\Api\Controller;
 use App\Models\Portfolio;
 use App\Models\PortfolioCategory;
 use Illuminate\Http\Request;

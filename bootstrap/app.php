@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ]);
 
-        // Exclude API routes from CSRF protection
+        // Exclude Api routes from CSRF protection
         $middleware->validateCsrfTokens(except: [
             'api/*',
             'sanctum/csrf-cookie',
