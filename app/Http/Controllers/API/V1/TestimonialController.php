@@ -49,7 +49,7 @@ class TestimonialController extends Controller
                     $request->file('image'),
                     'testimonials'
                 );
-                $data['image_url'] = $uploadResult['path'];
+                $data['image_url'] = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
             }
@@ -94,7 +94,7 @@ class TestimonialController extends Controller
                     $request->file('image'),
                     'testimonials'
                 );
-                $data['image_url'] = $uploadResult['path'];
+                $data['image_url'] = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
             }

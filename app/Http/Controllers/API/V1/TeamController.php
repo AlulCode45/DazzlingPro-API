@@ -83,7 +83,7 @@ class TeamController extends Controller
                     $request->file('photo'),
                     'team'
                 );
-                $photoPath = $uploadResult['path'];
+                $photoPath = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload photo: ' . $e->getMessage(), [], 422);
             }
@@ -182,7 +182,7 @@ class TeamController extends Controller
                     'team',
                     $team->photo_url
                 );
-                $photoPath = $uploadResult['path'];
+                $photoPath = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload photo: ' . $e->getMessage(), [], 422);
             }

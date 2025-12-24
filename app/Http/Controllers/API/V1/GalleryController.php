@@ -40,19 +40,6 @@ class GalleryController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Add full URL to images
-        $galleries->transform(function ($gallery) {
-            if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
-                $gallery->featured_image = url($gallery->featured_image);
-            }
-            if ($gallery->images) {
-                $gallery->images = array_map(function ($img) {
-                    return str_starts_with($img, 'http') ? $img : url($img);
-                }, $gallery->images);
-            }
-            return $gallery;
-        });
-
         return $this->sendResponse($galleries, 'Galleries retrieved successfully.');
     }
 
@@ -85,7 +72,7 @@ class GalleryController extends Controller
                     $request->file('featured_image'),
                     'gallery/featured'
                 );
-                $featuredImagePath = $uploadResult['path'];
+                $featuredImagePath = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload featured image: ' . $e->getMessage(), [], 422);
             }
@@ -100,7 +87,7 @@ class GalleryController extends Controller
                         $image,
                         'gallery/images'
                     );
-                    $imagePaths[] = $uploadResult['path'];
+                    $imagePaths[] = $uploadResult['url'];
                 } catch (\Exception $e) {
                     return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
                 }
@@ -116,16 +103,6 @@ class GalleryController extends Controller
         ]);
 
         $gallery->load('category');
-
-        // Add full URL to images
-        if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
-            $gallery->featured_image = url($gallery->featured_image);
-        }
-        if ($gallery->images) {
-            $gallery->images = array_map(function ($img) {
-                return str_starts_with($img, 'http') ? $img : url($img);
-            }, $gallery->images);
-        }
 
         return $this->sendResponse($gallery, 'Gallery created successfully.');
     }
@@ -187,7 +164,7 @@ class GalleryController extends Controller
                     'gallery/featured',
                     $gallery->featured_image
                 );
-                $updateData['featured_image'] = $uploadResult['path'];
+                $updateData['featured_image'] = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload featured image: ' . $e->getMessage(), [], 422);
             }
@@ -204,7 +181,7 @@ class GalleryController extends Controller
                         $image,
                         'gallery/images'
                     );
-                    $newImagePaths[] = $uploadResult['path'];
+                    $newImagePaths[] = $uploadResult['url'];
                 } catch (\Exception $e) {
                     return $this->sendError('Failed to upload image: ' . $e->getMessage(), [], 422);
                 }
@@ -217,15 +194,6 @@ class GalleryController extends Controller
         $gallery->update($updateData);
         $gallery->load('category');
 
-        // Add full URL to images
-        if ($gallery->featured_image && !str_starts_with($gallery->featured_image, 'http')) {
-            $gallery->featured_image = url($gallery->featured_image);
-        }
-        if ($gallery->images) {
-            $gallery->images = array_map(function ($img) {
-                return str_starts_with($img, 'http') ? $img : url($img);
-            }, $gallery->images);
-        }
 
         return $this->sendResponse($gallery, 'Gallery updated successfully.');
     }

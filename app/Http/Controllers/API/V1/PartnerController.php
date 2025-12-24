@@ -67,7 +67,7 @@ class PartnerController extends Controller
                     $request->file('logo'),
                     'partners'
                 );
-                $logoPath = $uploadResult['path'];
+                $logoPath = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload logo: ' . $e->getMessage(), [], 422);
             }
@@ -133,7 +133,7 @@ class PartnerController extends Controller
                     'partners',
                     $partner->logo_url
                 );
-                $updateData['logo_url'] = $uploadResult['path'];
+                $updateData['logo_url'] = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Failed to upload logo: ' . $e->getMessage(), [], 422);
             }

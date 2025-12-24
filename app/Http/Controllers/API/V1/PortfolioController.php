@@ -122,7 +122,7 @@ class PortfolioController extends Controller
                     $request->file('featured_image'),
                     'portfolios/featured'
                 );
-                $featuredImagePath = $uploadResult['path'];
+                $featuredImagePath = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Gagal mengupload gambar utama: ' . $e->getMessage(), [], 422);
             }
@@ -141,7 +141,7 @@ class PortfolioController extends Controller
                         $image,
                         'portfolios/images'
                     );
-                    $imagePaths[] = $uploadResult['path'];
+                    $imagePaths[] = $uploadResult['url'];
                 } catch (\Exception $e) {
                     return $this->sendError('Gagal mengupload gambar: ' . $e->getMessage(), [], 422);
                 }
@@ -256,7 +256,7 @@ class PortfolioController extends Controller
                     $request->file('featured_image'),
                     'portfolios/featured'
                 );
-                $featuredImagePath = $uploadResult['path'];
+                $featuredImagePath = $uploadResult['url'];
             } catch (\Exception $e) {
                 return $this->sendError('Gagal mengupload gambar utama: ' . $e->getMessage(), [], 422);
             }
@@ -286,7 +286,7 @@ class PortfolioController extends Controller
                         $image,
                         'portfolios/images'
                     );
-                    $imagePaths[] = $uploadResult['path'];
+                    $imagePaths[] = $uploadResult['url'];
                 } catch (\Exception $e) {
                     return $this->sendError('Gagal mengupload gambar: ' . $e->getMessage(), [], 422);
                 }

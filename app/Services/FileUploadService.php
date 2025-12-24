@@ -57,27 +57,45 @@ class FileUploadService
         $fullDirectory = "public/{$directory}";
         Storage::makeDirectory($fullDirectory);
 
-        // Store the file temporarily
+        // Store the file temporarily with original extension
         $tempFilename = $this->generateUniqueFilename($file);
         $tempPath = $file->storeAs($directory, $tempFilename, 'public');
-        $tempFullPath = Storage::path("public/{$tempPath}");
+        $tempFullPath = Storage::disk('public')->path($tempPath);
+
+        // Final WebP path
+        $finalPath = $directory . '/' . $filename;
+        $finalFullPath = Storage::disk('public')->path($finalPath);
 
         // Optimize and convert to WebP
-        $finalPath = $directory . '/' . $filename;
-        $finalFullPath = Storage::path("public/{$finalPath}");
+        try {
+            $image = $this->imageManager->read($tempFullPath);
 
-        $this->optimizeImageAndConvert($tempFullPath, $finalFullPath);
+            // Resize down if width exceeds max (keep aspect ratio)
+            if ($image->width() > 1920) {
+                $image->scaleDown(width: 1920);
+            }
 
-        // Delete temp file if different from final
-        if ($tempFullPath !== $finalFullPath && file_exists($tempFullPath)) {
-            @unlink($tempFullPath);
+            // Convert to WebP with quality 80
+            $bytes = $image->toWebp(quality: 80);
+            file_put_contents($finalFullPath, $bytes);
+
+            // Delete temp file after successful conversion
+            if (file_exists($tempFullPath)) {
+                @unlink($tempFullPath);
+            }
+        } catch (\Exception $e) {
+            // If conversion fails, delete temp and throw exception
+            if (file_exists($tempFullPath)) {
+                @unlink($tempFullPath);
+            }
+            throw new \Exception("Failed to process image: " . $e->getMessage());
         }
 
-        // Get public URL
-        $url = Storage::url($finalPath);
+        // Get public URL with correct disk
+        $url = asset('storage/' . $finalPath);
 
         // Get final file size
-        $finalSize = file_exists($finalFullPath) ? filesize($finalFullPath) : $file->getSize();
+        $finalSize = file_exists($finalFullPath) ? filesize($finalFullPath) : 0;
 
         return [
             'path' => $finalPath,
@@ -322,7 +340,7 @@ class FileUploadService
 
         return [
             'path' => $path,
-            'url' => Storage::url($path),
+            'url' => asset('storage/' . $path),
             'filename' => $filename,
             'size' => filesize($finalFullPath),
             'mime_type' => 'image/webp'
