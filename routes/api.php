@@ -110,7 +110,10 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('services', App\Http\Controllers\Api\V1\ServiceController::class);
         Route::apiResource('categories', App\Http\Controllers\Api\V1\CategoryController::class);
         Route::apiResource('portfolios', App\Http\Controllers\Api\V1\PortfolioController::class);
-        Route::apiResource('portfolio-categories', App\Http\Controllers\Api\V1\PortfolioController::class);
+
+        // Portfolio categories - use custom route to get categories list
+        Route::get('portfolio-categories', [App\Http\Controllers\Api\V1\PortfolioController::class, 'categories']);
+
         Route::apiResource('partners', App\Http\Controllers\Api\V1\PartnerController::class);
 
         Route::apiResource('company-information', App\Http\Controllers\Api\V1\CompanyInformationController::class);
