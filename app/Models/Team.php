@@ -7,9 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 class Team extends Model
 {
     protected $fillable = [
-        'name', 'position', 'bio', 'email', 'phone', 'photo_url',
-        'linkedin_url', 'instagram_url', 'facebook_url', 'twitter_url',
-        'skills', 'department', 'sort_order', 'is_active', 'is_featured'
+        'name',
+        'position',
+        'bio',
+        'email',
+        'phone',
+        'photo_url',
+        'linkedin_url',
+        'instagram_url',
+        'facebook_url',
+        'twitter_url',
+        'skills',
+        'sort_order',
+        'is_active',
+        'is_featured'
     ];
 
     protected $casts = [

@@ -109,7 +109,6 @@ class TeamController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'position' => $request->position,
-            'department' => $request->department,
             'bio' => $request->bio,
             'email' => $request->email,
             'phone' => $request->phone,
@@ -155,7 +154,6 @@ class TeamController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'position' => 'required|string|max:255',
-            'department' => 'nullable|string|max:255',
             'bio' => 'nullable|string',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
