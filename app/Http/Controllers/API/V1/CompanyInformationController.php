@@ -90,8 +90,8 @@ class CompanyInformationController extends Controller
             'website_url' => $request->website_url,
             'logo_url' => $request->logo_url,
             'favicon_url' => $request->favicon_url,
-            'social_media' => $request->social_media ? json_encode($request->social_media) : null,
-            'operating_hours' => $request->operating_hours ? json_encode($request->operating_hours) : null,
+            'social_media' => !empty($request->social_media) ? json_encode($request->social_media) : json_encode([]),
+            'operating_hours' => !empty($request->operating_hours) ? json_encode($request->operating_hours) : json_encode([]),
             'google_maps_url' => $request->google_maps_url,
             'business_registration_number' => $request->business_registration_number,
             'tax_id' => $request->tax_id,
@@ -101,7 +101,7 @@ class CompanyInformationController extends Controller
             'mission' => $request->mission,
             'vision' => $request->vision,
             'core_values' => $request->core_values,
-            'seo_meta' => $request->seo_meta ? json_encode($request->seo_meta) : null,
+            'seo_meta' => isset($request->seo_meta) ? json_encode($request->seo_meta) : json_encode([]),
             'is_active' => $request->is_active ?? true,
         ]);
 
@@ -170,15 +170,15 @@ class CompanyInformationController extends Controller
         $companyInformation->update($request->except(['social_media', 'operating_hours', 'seo_meta']));
 
         if ($request->has('social_media')) {
-            $companyInformation->social_media = $request->social_media ? json_encode($request->social_media) : null;
+            $companyInformation->social_media = !empty($request->social_media) ? json_encode($request->social_media) : json_encode([]);
         }
 
         if ($request->has('operating_hours')) {
-            $companyInformation->operating_hours = $request->operating_hours ? json_encode($request->operating_hours) : null;
+            $companyInformation->operating_hours = !empty($request->operating_hours) ? json_encode($request->operating_hours) : json_encode([]);
         }
 
         if ($request->has('seo_meta')) {
-            $companyInformation->seo_meta = $request->seo_meta ? json_encode($request->seo_meta) : null;
+            $companyInformation->seo_meta = isset($request->seo_meta) ? json_encode($request->seo_meta) : json_encode([]);
         }
 
         $companyInformation->save();
