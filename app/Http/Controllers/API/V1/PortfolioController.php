@@ -57,8 +57,8 @@ class PortfolioController extends Controller
                 $query->whereDate('event_date', '<=', $request->event_date_to);
             })
             ->with(['category'])
-            ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc')
+            // Sort by featured first, then by sort_order, then by created_at
+            ->orderByRaw('featured DESC, sort_order ASC, created_at DESC')
             ->paginate($request->per_page ?? 12);
 
         return $this->sendResponseWithPagination($portfolios, 'Portfolios retrieved successfully.');
