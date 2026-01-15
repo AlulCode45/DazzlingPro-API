@@ -19,7 +19,7 @@ class ServiceController extends Controller
     {
         $services = Service::where('is_active', true)
             ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return $this->sendResponse(

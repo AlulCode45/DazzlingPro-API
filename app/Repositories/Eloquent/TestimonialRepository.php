@@ -27,7 +27,7 @@ class TestimonialRepository extends BaseRepository implements TestimonialReposit
     public function getActiveTestimonials(): Collection
     {
         return $this->model->where('status', true)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
     }
 
@@ -38,7 +38,7 @@ class TestimonialRepository extends BaseRepository implements TestimonialReposit
             ->get();
     }
 
-    public function paginate(int $perPage = 10, array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function paginate(int $perPage = 100, array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = $this->query;
 
@@ -50,6 +50,6 @@ class TestimonialRepository extends BaseRepository implements TestimonialReposit
             $query->where('rating', $filters['rating']);
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        return $query->orderBy('id', 'asc')->paginate($perPage);
     }
 }

@@ -37,7 +37,7 @@ class GalleryController extends Controller
                 $query->where('title', 'like', '%' . $request->search . '%');
             })
             ->with(['category'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return $this->sendResponse($galleries, 'Galleries retrieved successfully.');

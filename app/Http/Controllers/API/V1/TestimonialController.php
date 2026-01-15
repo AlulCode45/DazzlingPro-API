@@ -27,7 +27,7 @@ class TestimonialController extends Controller
 
     public function index(GetTestimonialsRequest $request): JsonResponse
     {
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', 100);
         $filters = $request->only(['status', 'rating']);
 
         $testimonials = $this->testimonialService->paginate($perPage, $filters);

@@ -32,7 +32,7 @@ class PartnerController extends Controller
                 $query->where('name', 'like', '%' . $request->search . '%');
             })
             ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return $this->sendResponse($partners, 'Partners retrieved successfully.');

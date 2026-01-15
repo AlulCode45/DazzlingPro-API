@@ -27,7 +27,7 @@ class EventRentalController extends Controller
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->search . '%');
             })
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return $this->sendResponse($rentals, 'Event rentals retrieved successfully.');
