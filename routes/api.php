@@ -91,6 +91,10 @@ Route::prefix('v1')->group(function () {
         // Page Sections
         Route::get('/page-sections', [App\Http\Controllers\Api\V1\PageSectionController::class, 'publicIndex']);
         Route::get('/page-sections/{key}', [App\Http\Controllers\Api\V1\PageSectionController::class, 'getByKey']);
+
+        // Analytics tracking (public)
+        Route::post('/analytics/track-page-view', [App\Http\Controllers\Api\V1\AnalyticController::class, 'trackPageView']);
+        Route::post('/analytics/track-event', [App\Http\Controllers\Api\V1\AnalyticController::class, 'trackEvent']);
     });
 
     /*
@@ -122,6 +126,17 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('faqs', App\Http\Controllers\Api\V1\FAQController::class);
         Route::apiResource('page-sections', App\Http\Controllers\Api\V1\PageSectionController::class);
         Route::apiResource('event-rentals', App\Http\Controllers\Api\V1\EventRentalController::class);
+
+        // Analytics
+        Route::prefix('analytics')->group(function () {
+            Route::get('/overview', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getOverview']);
+            Route::get('/dashboard-stats', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getDashboardStats']);
+            Route::get('/page-views', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getPageViews']);
+            Route::get('/top-pages', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getTopPages']);
+            Route::get('/visitor-trends', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getVisitorTrends']);
+            Route::get('/top-referrers', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getTopReferrers']);
+            Route::get('/browser-stats', [App\Http\Controllers\Api\V1\AnalyticController::class, 'getBrowserStats']);
+        });
 
         // Upload
         Route::prefix('upload')->group(function () {
